@@ -16,8 +16,10 @@ public class MySQLMutexes<ID> implements Mutexes<ID> {
     private long maxLockTime;
     private JdbcTemplate jdbcTemplate;
     private Class entityClass;
+    private String entityIDField;
     private CurrentTimeMillisClock clock = CurrentTimeMillisClock.getInstance();
     private boolean mock;
+    private volatile boolean initialized;
 
     public MySQLMutexes(JdbcTemplate jdbcTemplate, Class entityClass, String entityIDField, long maxLockTime) {
         if (jdbcTemplate == null) {
@@ -26,12 +28,24 @@ public class MySQLMutexes<ID> implements Mutexes<ID> {
         }
         this.jdbcTemplate = jdbcTemplate;
         this.entityClass = entityClass;
+        this.entityIDField = entityIDField;
         this.maxLockTime = maxLockTime;
+    }
 
-        try {
-            createMutexesTableIfNotExists(jdbcTemplate, entityClass, entityIDField);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+    private void initIfNecessary() {
+        if (initialized) {
+            return;
+        }
+        synchronized (this) {
+            if (initialized) {
+                return;
+            }
+            try {
+                createMutexesTableIfNotExists(jdbcTemplate, entityClass, entityIDField);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+            initialized = true;
         }
     }
 
@@ -54,6 +68,7 @@ public class MySQLMutexes<ID> implements Mutexes<ID> {
      */
     @Override
     public int lock(ID id, String processName) {
+        initIfNecessary();
         long currTime = clock.now();
         long unlockTime = currTime - maxLockTime;
         //通过UPDATE来获得锁
@@ -77,6 +92,7 @@ public class MySQLMutexes<ID> implements Mutexes<ID> {
      */
     @Override
     public boolean newAndLock(ID id, String processName) {
+        initIfNecessary();
         String sql = "INSERT INTO mutexes_" + entityClass.getName() + " (id, lock, lockProcess, lockTime) VALUES (?, ?, ?, ?)";
         try {
             jdbcTemplate.update(sql, id, 1, processName, clock.now());
@@ -88,6 +104,7 @@ public class MySQLMutexes<ID> implements Mutexes<ID> {
 
     @Override
     public void unlockAll(Set<Object> ids) {
+        initIfNecessary();
         String sql = "UPDATE mutexes_" + entityClass.getName() + " SET lock = ? WHERE id = ?";
         List<Object[]> updateParameters = new ArrayList<>();
         for (Object id : ids) {
@@ -98,12 +115,14 @@ public class MySQLMutexes<ID> implements Mutexes<ID> {
 
     @Override
     public String getLockProcess(ID id) {
+        initIfNecessary();
         String sql = "SELECT lockProcess FROM mutexes_" + entityClass.getName() + " WHERE id = ?";
         return jdbcTemplate.queryForObject(sql, String.class, id);
     }
 
     @Override
     public void removeAll(Set<Object> ids) {
+        initIfNecessary();
         String sql = "DELETE FROM mutexes_" + entityClass.getName() + " WHERE id = ?";
         List<Object[]> removeParameters = new ArrayList<>();
         for (Object id : ids) {
