@@ -52,7 +52,7 @@ public class MySQLMutexes<ID> implements Mutexes<ID> {
     private void createMutexesTableIfNotExists(JdbcTemplate jdbcTemplate, Class entityClass, String entityIDField) throws Exception {
         String mutexesTableName = "mutexes_" + entityClass.getSimpleName();
         String sql = "CREATE TABLE IF NOT EXISTS " + mutexesTableName + " (";
-        Field idField = entityClass.getField(entityIDField);
+        Field idField = entityClass.getDeclaredField(entityIDField);
         String idFieldType = idField.getType().getName();
         String idMySQLDataType = MySQLUtil.getMySQLDataType(idFieldType);
         sql += "id " + idMySQLDataType + "  PRIMARY KEY,";
