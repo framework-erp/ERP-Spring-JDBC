@@ -46,7 +46,7 @@ public class MySQLStore<E, ID> implements Store<E, ID> {
 
         insertSQL = createInsertSQL(entityClass);
         updateSQL = createUpdateSQL(entityClass, entityIDField);
-        deleteSQL = "DELETE FROM " + entityClass.getName() + " WHERE " + entityIDField + "=?";
+        deleteSQL = "DELETE FROM " + entityClass.getSimpleName() + " WHERE " + entityIDField + "=?";
 
         this.jdbcTemplate = jdbcTemplate;
         this.entityIDField = entityIDField;
@@ -62,7 +62,7 @@ public class MySQLStore<E, ID> implements Store<E, ID> {
     }
 
     private String createUpdateSQL(Class<E> entityClass, String entityIDField) {
-        String updateSQL = "UPDATE " + entityClass.getName() + " SET ";
+        String updateSQL = "UPDATE " + entityClass.getSimpleName() + " SET ";
         for (String entityField : entityFieldNames) {
             updateSQL += entityField + "=?,";
         }
@@ -71,7 +71,7 @@ public class MySQLStore<E, ID> implements Store<E, ID> {
     }
 
     private String createInsertSQL(Class<E> entityClass) {
-        String insertSQL = "INSERT INTO " + entityClass.getName() + " (";
+        String insertSQL = "INSERT INTO " + entityClass.getSimpleName() + " (";
         for (String entityField : entityFieldNames) {
             insertSQL += entityField + ",";
         }
@@ -134,7 +134,7 @@ public class MySQLStore<E, ID> implements Store<E, ID> {
     private void createTableIfNotExists(JdbcTemplate jdbcTemplate, Class<E> entityClass, String entityIDField) {
         Field[] fields = entityClass.getDeclaredFields();
 
-        String tableName = entityClass.getName();
+        String tableName = entityClass.getSimpleName();
         // 构建创建表的 SQL 语句
         String createTableQuery = "CREATE TABLE IF NOT EXISTS  " + tableName + " (";
         for (Field field : fields) {
@@ -158,7 +158,7 @@ public class MySQLStore<E, ID> implements Store<E, ID> {
         if (isMock()) {
             return mockStore.load(id);
         }
-        return jdbcTemplate.queryForObject("SELECT * FROM " + entityClass.getName() + " WHERE " +
+        return jdbcTemplate.queryForObject("SELECT * FROM " + entityClass.getSimpleName() + " WHERE " +
                 entityIDField +
                 " = " + id, rowMapper);
     }
