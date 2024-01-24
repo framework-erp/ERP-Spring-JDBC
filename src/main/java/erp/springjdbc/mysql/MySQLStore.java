@@ -6,6 +6,7 @@ import erp.repository.Store;
 import erp.repository.impl.mem.MemStore;
 import erp.springjdbc.NestedPOJOJSONRowMapper;
 import erp.util.Unsafe;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.lang.reflect.Field;
@@ -88,45 +89,41 @@ public class MySQLStore<E, ID> implements Store<E, ID> {
         Class<?> fieldType = field.getType();
         long fieldOffset = Unsafe.getFieldOffset(field);
         if (fieldType.equals(byte.class)) {
-            entityFieldGetter = (e) -> {
-                return Unsafe.getByteFieldOfObject(e, fieldOffset);
-            };
+            entityFieldGetter = (e) -> Unsafe.getByteFieldOfObject(e, fieldOffset);
         } else if (fieldType.equals(short.class)) {
-            entityFieldGetter = (e) -> {
-                return Unsafe.getShortFieldOfObject(e, fieldOffset);
-            };
+            entityFieldGetter = (e) -> Unsafe.getShortFieldOfObject(e, fieldOffset);
         } else if (fieldType.equals(char.class)) {
-            entityFieldGetter = (e) -> {
-                return Unsafe.getCharFieldOfObject(e, fieldOffset);
-            };
+            entityFieldGetter = (e) -> Unsafe.getCharFieldOfObject(e, fieldOffset);
         } else if (fieldType.equals(int.class)) {
-            entityFieldGetter = (e) -> {
-                return Unsafe.getIntFieldOfObject(e, fieldOffset);
-            };
+            entityFieldGetter = (e) -> Unsafe.getIntFieldOfObject(e, fieldOffset);
         } else if (fieldType.equals(long.class)) {
-            entityFieldGetter = (e) -> {
-                return Unsafe.getLongFieldOfObject(e, fieldOffset);
-            };
+            entityFieldGetter = (e) -> Unsafe.getLongFieldOfObject(e, fieldOffset);
         } else if (fieldType.equals(float.class)) {
-            entityFieldGetter = (e) -> {
-                return Unsafe.getFloatFieldOfObject(e, fieldOffset);
-            };
+            entityFieldGetter = (e) -> Unsafe.getFloatFieldOfObject(e, fieldOffset);
         } else if (fieldType.equals(double.class)) {
-            entityFieldGetter = (e) -> {
-                return Unsafe.getDoubleFieldOfObject(e, fieldOffset);
-            };
+            entityFieldGetter = (e) -> Unsafe.getDoubleFieldOfObject(e, fieldOffset);
         } else if (fieldType.equals(boolean.class)) {
-            entityFieldGetter = (e) -> {
-                return Unsafe.getBooleanFieldOfObject(e, fieldOffset);
-            };
+            entityFieldGetter = (e) -> Unsafe.getBooleanFieldOfObject(e, fieldOffset);
         } else if (fieldType.equals(String.class)) {
-            entityFieldGetter = (e) -> {
-                return Unsafe.getObjectFieldOfObject(e, fieldOffset);
-            };
+            entityFieldGetter = (e) -> Unsafe.getObjectFieldOfObject(e, fieldOffset);
+        } else if (fieldType.equals(Byte.class)) {
+            entityFieldGetter = (e) -> Unsafe.getObjectFieldOfObject(e, fieldOffset);
+        } else if (fieldType.equals(Short.class)) {
+            entityFieldGetter = (e) -> Unsafe.getObjectFieldOfObject(e, fieldOffset);
+        } else if (fieldType.equals(Character.class)) {
+            entityFieldGetter = (e) -> Unsafe.getObjectFieldOfObject(e, fieldOffset);
+        } else if (fieldType.equals(Integer.class)) {
+            entityFieldGetter = (e) -> Unsafe.getObjectFieldOfObject(e, fieldOffset);
+        } else if (fieldType.equals(Long.class)) {
+            entityFieldGetter = (e) -> Unsafe.getObjectFieldOfObject(e, fieldOffset);
+        } else if (fieldType.equals(Float.class)) {
+            entityFieldGetter = (e) -> Unsafe.getObjectFieldOfObject(e, fieldOffset);
+        } else if (fieldType.equals(Double.class)) {
+            entityFieldGetter = (e) -> Unsafe.getObjectFieldOfObject(e, fieldOffset);
+        } else if (fieldType.equals(Boolean.class)) {
+            entityFieldGetter = (e) -> Unsafe.getObjectFieldOfObject(e, fieldOffset);
         } else {
-            entityFieldGetter = (e) -> {
-                return JSON.toJSONString(Unsafe.getObjectFieldOfObject(e, fieldOffset));
-            };
+            entityFieldGetter = (e) -> JSON.toJSONString(Unsafe.getObjectFieldOfObject(e, fieldOffset));
         }
         return entityFieldGetter;
     }
@@ -158,9 +155,13 @@ public class MySQLStore<E, ID> implements Store<E, ID> {
         if (isMock()) {
             return mockStore.load(id);
         }
-        return jdbcTemplate.queryForObject("SELECT * FROM " + entityClass.getSimpleName() + " WHERE " +
-                entityIDField +
-                " = " + id, rowMapper);
+        try {
+            return jdbcTemplate.queryForObject("SELECT * FROM " + entityClass.getSimpleName() + " WHERE " +
+                    entityIDField +
+                    " = " + id, rowMapper);
+        } catch (EmptyResultDataAccessException e) {
+            return null;
+        }
     }
 
     @Override

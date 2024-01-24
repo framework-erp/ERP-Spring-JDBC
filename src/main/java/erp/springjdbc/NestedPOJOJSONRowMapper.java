@@ -37,65 +37,58 @@ public class NestedPOJOJSONRowMapper<E> implements RowMapper<E> {
             ResultSetColumnValueGetter resultSetColumnValueGetter = null;
             EntityFieldSetter entityFieldSetter = null;
             if (fieldType.equals(byte.class)) {
-                resultSetColumnValueGetter = (rs) -> {
-                    return rs.getByte(fieldName);
-                };
-                entityFieldSetter = (e, v) -> {
-                    Unsafe.setByteFieldOfObject(e, fieldOffset, (Byte) v);
-                };
+                resultSetColumnValueGetter = (rs) -> rs.getByte(fieldName);
+                entityFieldSetter = (e, v) -> Unsafe.setByteFieldOfObject(e, fieldOffset, (Byte) v);
             } else if (fieldType.equals(short.class)) {
-                resultSetColumnValueGetter = (rs) -> {
-                    return rs.getShort(fieldName);
-                };
-                entityFieldSetter = (e, v) -> {
-                    Unsafe.setShortFieldOfObject(e, fieldOffset, (Short) v);
-                };
+                resultSetColumnValueGetter = (rs) -> rs.getShort(fieldName);
+                entityFieldSetter = (e, v) -> Unsafe.setShortFieldOfObject(e, fieldOffset, (Short) v);
             } else if (fieldType.equals(char.class)) {
-                resultSetColumnValueGetter = (rs) -> {
-                    return (char) rs.getInt(fieldName);
-                };
-                entityFieldSetter = (e, v) -> {
-                    Unsafe.setCharFieldOfObject(e, fieldOffset, (Character) v);
-                };
+                resultSetColumnValueGetter = (rs) -> (char) rs.getInt(fieldName);
+                entityFieldSetter = (e, v) -> Unsafe.setCharFieldOfObject(e, fieldOffset, (Character) v);
             } else if (fieldType.equals(int.class)) {
-                resultSetColumnValueGetter = (rs) -> {
-                    return rs.getInt(fieldName);
-                };
-                entityFieldSetter = (e, v) -> {
-                    Unsafe.setIntFieldOfObject(e, fieldOffset, (Integer) v);
-                };
+                resultSetColumnValueGetter = (rs) -> rs.getInt(fieldName);
+                entityFieldSetter = (e, v) -> Unsafe.setIntFieldOfObject(e, fieldOffset, (Integer) v);
             } else if (fieldType.equals(float.class)) {
-                resultSetColumnValueGetter = (rs) -> {
-                    return rs.getFloat(fieldName);
-                };
-                entityFieldSetter = (e, v) -> {
-                    Unsafe.setFloatFieldOfObject(e, fieldOffset, (Float) v);
-                };
+                resultSetColumnValueGetter = (rs) -> rs.getFloat(fieldName);
+                entityFieldSetter = (e, v) -> Unsafe.setFloatFieldOfObject(e, fieldOffset, (Float) v);
             } else if (fieldType.equals(long.class)) {
-                resultSetColumnValueGetter = (rs) -> {
-                    return rs.getLong(fieldName);
-                };
-                entityFieldSetter = (e, v) -> {
-                    Unsafe.setLongFieldOfObject(e, fieldOffset, (Long) v);
-                };
+                resultSetColumnValueGetter = (rs) -> rs.getLong(fieldName);
+                entityFieldSetter = (e, v) -> Unsafe.setLongFieldOfObject(e, fieldOffset, (Long) v);
             } else if (fieldType.equals(double.class)) {
-                resultSetColumnValueGetter = (rs) -> {
-                    return rs.getDouble(fieldName);
-                };
-                entityFieldSetter = (e, v) -> {
-                    Unsafe.setDoubleFieldOfObject(e, fieldOffset, (Double) v);
-                };
+                resultSetColumnValueGetter = (rs) -> rs.getDouble(fieldName);
+                entityFieldSetter = (e, v) -> Unsafe.setDoubleFieldOfObject(e, fieldOffset, (Double) v);
             } else if (fieldType.equals(boolean.class)) {
-                resultSetColumnValueGetter = (rs) -> {
-                    return rs.getBoolean(fieldName);
-                };
-                entityFieldSetter = (e, v) -> {
-                    Unsafe.setBooleanFieldOfObject(e, fieldOffset, (Boolean) v);
-                };
+                resultSetColumnValueGetter = (rs) -> rs.getBoolean(fieldName);
+                entityFieldSetter = (e, v) -> Unsafe.setBooleanFieldOfObject(e, fieldOffset, (Boolean) v);
+            } else if (fieldType.equals(String.class)) {
+                resultSetColumnValueGetter = (rs) -> rs.getString(fieldName);
+                entityFieldSetter = (e, v) -> Unsafe.setObjectFieldOfObject(e, fieldOffset, v);
+            } else if (fieldType.equals(Byte.class)) {
+                resultSetColumnValueGetter = (rs) -> rs.getByte(fieldName);
+                entityFieldSetter = (e, v) -> Unsafe.setObjectFieldOfObject(e, fieldOffset, v);
+            } else if (fieldType.equals(Short.class)) {
+                resultSetColumnValueGetter = (rs) -> rs.getShort(fieldName);
+                entityFieldSetter = (e, v) -> Unsafe.setObjectFieldOfObject(e, fieldOffset, v);
+            } else if (fieldType.equals(Character.class)) {
+                resultSetColumnValueGetter = (rs) -> (char) rs.getInt(fieldName);
+                entityFieldSetter = (e, v) -> Unsafe.setObjectFieldOfObject(e, fieldOffset, v);
+            } else if (fieldType.equals(Integer.class)) {
+                resultSetColumnValueGetter = (rs) -> rs.getInt(fieldName);
+                entityFieldSetter = (e, v) -> Unsafe.setObjectFieldOfObject(e, fieldOffset, v);
+            } else if (fieldType.equals(Float.class)) {
+                resultSetColumnValueGetter = (rs) -> rs.getFloat(fieldName);
+                entityFieldSetter = (e, v) -> Unsafe.setObjectFieldOfObject(e, fieldOffset, v);
+            } else if (fieldType.equals(Long.class)) {
+                resultSetColumnValueGetter = (rs) -> rs.getLong(fieldName);
+                entityFieldSetter = (e, v) -> Unsafe.setObjectFieldOfObject(e, fieldOffset, v);
+            } else if (fieldType.equals(Double.class)) {
+                resultSetColumnValueGetter = (rs) -> rs.getDouble(fieldName);
+                entityFieldSetter = (e, v) -> Unsafe.setObjectFieldOfObject(e, fieldOffset, v);
+            } else if (fieldType.equals(Boolean.class)) {
+                resultSetColumnValueGetter = (rs) -> rs.getBoolean(fieldName);
+                entityFieldSetter = (e, v) -> Unsafe.setObjectFieldOfObject(e, fieldOffset, v);
             } else {
-                resultSetColumnValueGetter = (rs) -> {
-                    return rs.getString(fieldName);
-                };
+                resultSetColumnValueGetter = (rs) -> rs.getString(fieldName);
                 entityFieldSetter = (e, v) -> {
                     Object nestedField = JSON.parseObject((String) v, fieldType);
                     Unsafe.setObjectFieldOfObject(e, fieldOffset, nestedField);

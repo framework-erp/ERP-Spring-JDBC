@@ -2,7 +2,7 @@ package erp.springjdbc.mysql;
 
 public class Mutex<ID> {
     private ID id;
-    private boolean lock;
+    private boolean locked;
     private long lockTime;
     private String lockProcess;
 
@@ -14,12 +14,12 @@ public class Mutex<ID> {
         this.id = id;
     }
 
-    public boolean isLock() {
-        return lock;
+    public boolean isLocked() {
+        return locked;
     }
 
-    public void setLock(boolean lock) {
-        this.lock = lock;
+    public void setLocked(boolean locked) {
+        this.locked = locked;
     }
 
     public long getLockTime() {
