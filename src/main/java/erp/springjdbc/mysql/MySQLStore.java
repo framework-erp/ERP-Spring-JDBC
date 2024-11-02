@@ -29,13 +29,13 @@ public class MySQLStore<E, ID> implements Store<E, ID> {
     private String deleteSQL;
     private MemStore<E, ID> mockStore;
 
-    public MySQLStore(JdbcTemplate jdbcTemplate, Class<E> entityClass, String entityIDField) {
+    public MySQLStore(JdbcTemplate jdbcTemplate, Class<E> entityClass, String entityIDField, String tableName) {
         if (jdbcTemplate == null) {
             initAsMock();
             return;
         }
         this.entityClass = entityClass;
-        createTableIfNotExists(jdbcTemplate, entityClass, entityIDField);
+        createTableIfNotExists(jdbcTemplate, entityClass, entityIDField, tableName);
 
         Field[] fields = entityClass.getDeclaredFields();
         for (Field field : fields) {
@@ -128,10 +128,9 @@ public class MySQLStore<E, ID> implements Store<E, ID> {
         return entityFieldGetter;
     }
 
-    private void createTableIfNotExists(JdbcTemplate jdbcTemplate, Class<E> entityClass, String entityIDField) {
+    private void createTableIfNotExists(JdbcTemplate jdbcTemplate, Class<E> entityClass, String entityIDField, String tableName) {
         Field[] fields = entityClass.getDeclaredFields();
 
-        String tableName = entityClass.getSimpleName();
         // 构建创建表的 SQL 语句
         String createTableQuery = "CREATE TABLE IF NOT EXISTS  " + tableName + " (";
         for (Field field : fields) {

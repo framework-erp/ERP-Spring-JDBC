@@ -18,11 +18,12 @@ public class MySQLMutexes<ID> implements Mutexes<ID> {
     private JdbcTemplate jdbcTemplate;
     private Class entityClass;
     private String entityIDField;
+    private String entityTableName;
     private CurrentTimeMillisClock clock = CurrentTimeMillisClock.getInstance();
     private boolean mock;
     private volatile boolean initialized;
 
-    public MySQLMutexes(JdbcTemplate jdbcTemplate, Class entityClass, String entityIDField, long maxLockTime) {
+    public MySQLMutexes(JdbcTemplate jdbcTemplate, Class entityClass, String entityIDField, String entityTableName, long maxLockTime) {
         if (jdbcTemplate == null) {
             mock = true;
             return;
@@ -30,6 +31,7 @@ public class MySQLMutexes<ID> implements Mutexes<ID> {
         this.jdbcTemplate = jdbcTemplate;
         this.entityClass = entityClass;
         this.entityIDField = entityIDField;
+        this.entityTableName = entityTableName;
         this.maxLockTime = maxLockTime;
     }
 
@@ -51,7 +53,7 @@ public class MySQLMutexes<ID> implements Mutexes<ID> {
     }
 
     private void createMutexesTableIfNotExists(JdbcTemplate jdbcTemplate, Class entityClass, String entityIDField) throws Exception {
-        String mutexesTableName = "mutexes_" + entityClass.getSimpleName();
+        String mutexesTableName = "mutexes_" + entityTableName;
         String sql = "CREATE TABLE IF NOT EXISTS " + mutexesTableName + " (";
         Field idField = entityClass.getDeclaredField(entityIDField);
         String idFieldType = idField.getType().getName();
