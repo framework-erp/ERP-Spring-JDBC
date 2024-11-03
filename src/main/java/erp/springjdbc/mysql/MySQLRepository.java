@@ -1,5 +1,6 @@
 package erp.springjdbc.mysql;
 
+import erp.AppContext;
 import erp.repository.Repository;
 import org.springframework.jdbc.core.JdbcTemplate;
 
@@ -9,6 +10,7 @@ public class MySQLRepository<E, ID> extends Repository<E, ID> {
         String tableName = entityType.getSimpleName();
         this.store = new MySQLStore<>(jdbcTemplate, entityType, entityIDField, tableName);
         this.mutexes = new MySQLMutexes<>(jdbcTemplate, entityType, entityIDField, tableName, 30000L);
+        AppContext.registerRepository(this);
     }
 
     public MySQLRepository(JdbcTemplate jdbcTemplate, Class<E> entityType) {
@@ -16,6 +18,7 @@ public class MySQLRepository<E, ID> extends Repository<E, ID> {
         String tableName = entityType.getSimpleName();
         this.store = new MySQLStore<>(jdbcTemplate, entityType, entityIDField, tableName);
         this.mutexes = new MySQLMutexes<>(jdbcTemplate, entityType, entityIDField, tableName, 30000L);
+        AppContext.registerRepository(this);
     }
 
     public MySQLRepository(JdbcTemplate jdbcTemplate, Class<E> entityType, String repositoryName) {
@@ -23,6 +26,7 @@ public class MySQLRepository<E, ID> extends Repository<E, ID> {
         String tableName = repositoryName;
         this.store = new MySQLStore<>(jdbcTemplate, entityType, entityIDField, tableName);
         this.mutexes = new MySQLMutexes<>(jdbcTemplate, entityType, entityIDField, tableName, 30000L);
+        AppContext.registerRepository(this);
     }
 
 }
