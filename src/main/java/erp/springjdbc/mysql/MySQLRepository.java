@@ -13,6 +13,14 @@ public class MySQLRepository<E, ID> extends Repository<E, ID> {
         AppContext.registerRepository(this);
     }
 
+    protected MySQLRepository(JdbcTemplate jdbcTemplate, String repositoryName) {
+        super(repositoryName);
+        String tableName = repositoryName;
+        this.store = new MySQLStore<>(jdbcTemplate, entityType, entityIDField, tableName);
+        this.mutexes = new MySQLMutexes<>(jdbcTemplate, entityType, entityIDField, tableName, 30000L);
+        AppContext.registerRepository(this);
+    }
+
     public MySQLRepository(JdbcTemplate jdbcTemplate, Class<E> entityType) {
         super(entityType);
         String tableName = entityType.getSimpleName();
