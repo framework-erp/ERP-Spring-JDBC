@@ -1,6 +1,7 @@
 package erp.springjdbc;
 
 import com.alibaba.fastjson2.JSON;
+import com.alibaba.fastjson2.JSONReader;
 import erp.util.Unsafe;
 import org.springframework.jdbc.core.RowMapper;
 
@@ -90,7 +91,7 @@ public class NestedPOJOJSONRowMapper<E> implements RowMapper<E> {
             } else {
                 resultSetColumnValueGetter = (rs) -> rs.getString(fieldName);
                 entityFieldSetter = (e, v) -> {
-                    Object nestedField = JSON.parseObject((String) v, fieldType);
+                    Object nestedField = JSON.parseObject((String) v, Object.class, JSONReader.Feature.SupportAutoType);
                     Unsafe.setObjectFieldOfObject(e, fieldOffset, nestedField);
                 };
             }

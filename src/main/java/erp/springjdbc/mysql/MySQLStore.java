@@ -1,6 +1,7 @@
 package erp.springjdbc.mysql;
 
 import com.alibaba.fastjson2.JSON;
+import com.alibaba.fastjson2.JSONWriter;
 import erp.process.ProcessEntity;
 import erp.repository.Store;
 import erp.repository.impl.mem.MemStore;
@@ -21,9 +22,11 @@ public class MySQLStore<E, ID> implements Store<E, ID> {
     private JdbcTemplate jdbcTemplate;
     private String entityIDField;
     private Class<E> entityClass;
+    private String tableName;
     private NestedPOJOJSONRowMapper<E> rowMapper;
     private Map<String, EntityFieldGetter> entityFieldGetterMap = new HashMap<>();
     private List<String> entityFieldNames = new ArrayList<>();
+    private String selectSQL;
     private String insertSQL;
     private String updateSQL;
     private String deleteSQL;
@@ -34,8 +37,12 @@ public class MySQLStore<E, ID> implements Store<E, ID> {
             initAsMock();
             return;
         }
+        this.tableName = tableName;
         this.entityClass = entityClass;
-        createTableIfNotExists(jdbcTemplate, entityClass, entityIDField, tableName);
+        this.jdbcTemplate = jdbcTemplate;
+        this.entityIDField = entityIDField;
+
+        createTableIfNotExists();
 
         Field[] fields = entityClass.getDeclaredFields();
         for (Field field : fields) {
@@ -45,12 +52,11 @@ public class MySQLStore<E, ID> implements Store<E, ID> {
             entityFieldNames.add(fieldName);
         }
 
-        insertSQL = createInsertSQL(entityClass);
-        updateSQL = createUpdateSQL(entityClass, entityIDField);
-        deleteSQL = "DELETE FROM " + entityClass.getSimpleName() + " WHERE " + entityIDField + "=?";
+        selectSQL = createSelectSQL();
+        insertSQL = createInsertSQL();
+        updateSQL = createUpdateSQL();
+        deleteSQL = "DELETE FROM " + tableName + " WHERE " + entityIDField + "=?";
 
-        this.jdbcTemplate = jdbcTemplate;
-        this.entityIDField = entityIDField;
         rowMapper = new NestedPOJOJSONRowMapper<>(entityClass);
     }
 
@@ -62,8 +68,15 @@ public class MySQLStore<E, ID> implements Store<E, ID> {
         return mockStore != null;
     }
 
-    private String createUpdateSQL(Class<E> entityClass, String entityIDField) {
-        String updateSQL = "UPDATE " + entityClass.getSimpleName() + " SET ";
+    private String createSelectSQL() {
+        String selectSQL = "SELECT * FROM " + tableName + " WHERE " +
+                entityIDField +
+                " =?";
+        return selectSQL;
+    }
+
+    private String createUpdateSQL() {
+        String updateSQL = "UPDATE " + tableName + " SET ";
         for (String entityField : entityFieldNames) {
             updateSQL += entityField + "=?,";
         }
@@ -71,8 +84,8 @@ public class MySQLStore<E, ID> implements Store<E, ID> {
         return updateSQL;
     }
 
-    private String createInsertSQL(Class<E> entityClass) {
-        String insertSQL = "INSERT INTO " + entityClass.getSimpleName() + " (";
+    private String createInsertSQL() {
+        String insertSQL = "INSERT INTO " + tableName + " (";
         for (String entityField : entityFieldNames) {
             insertSQL += entityField + ",";
         }
@@ -123,12 +136,12 @@ public class MySQLStore<E, ID> implements Store<E, ID> {
         } else if (fieldType.equals(Boolean.class)) {
             entityFieldGetter = (e) -> Unsafe.getObjectFieldOfObject(e, fieldOffset);
         } else {
-            entityFieldGetter = (e) -> JSON.toJSONString(Unsafe.getObjectFieldOfObject(e, fieldOffset));
+            entityFieldGetter = (e) -> JSON.toJSONString(Unsafe.getObjectFieldOfObject(e, fieldOffset), JSONWriter.Feature.WriteClassName);
         }
         return entityFieldGetter;
     }
 
-    private void createTableIfNotExists(JdbcTemplate jdbcTemplate, Class<E> entityClass, String entityIDField, String tableName) {
+    private void createTableIfNotExists() {
         Field[] fields = entityClass.getDeclaredFields();
 
         // 构建创建表的 SQL 语句
@@ -155,9 +168,8 @@ public class MySQLStore<E, ID> implements Store<E, ID> {
             return mockStore.load(id);
         }
         try {
-            return jdbcTemplate.queryForObject("SELECT * FROM " + entityClass.getSimpleName() + " WHERE " +
-                    entityIDField +
-                    " = " + id, rowMapper);
+            Object[] args = new Object[]{id};
+            return jdbcTemplate.queryForObject(selectSQL, rowMapper, args);
         } catch (EmptyResultDataAccessException e) {
             return null;
         }

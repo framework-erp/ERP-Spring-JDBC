@@ -18,7 +18,7 @@ public class MySQLMutexes<ID> implements Mutexes<ID> {
     private JdbcTemplate jdbcTemplate;
     private Class entityClass;
     private String entityIDField;
-    private String entityTableName;
+    private String mutexesTableName;
     private CurrentTimeMillisClock clock = CurrentTimeMillisClock.getInstance();
     private boolean mock;
     private volatile boolean initialized;
@@ -31,7 +31,7 @@ public class MySQLMutexes<ID> implements Mutexes<ID> {
         this.jdbcTemplate = jdbcTemplate;
         this.entityClass = entityClass;
         this.entityIDField = entityIDField;
-        this.entityTableName = entityTableName;
+        this.mutexesTableName = "mutexes_" + entityTableName;
         this.maxLockTime = maxLockTime;
     }
 
@@ -44,7 +44,7 @@ public class MySQLMutexes<ID> implements Mutexes<ID> {
                 return;
             }
             try {
-                createMutexesTableIfNotExists(jdbcTemplate, entityClass, entityIDField);
+                createMutexesTableIfNotExists();
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
@@ -52,8 +52,7 @@ public class MySQLMutexes<ID> implements Mutexes<ID> {
         }
     }
 
-    private void createMutexesTableIfNotExists(JdbcTemplate jdbcTemplate, Class entityClass, String entityIDField) throws Exception {
-        String mutexesTableName = "mutexes_" + entityTableName;
+    private void createMutexesTableIfNotExists() throws Exception {
         String sql = "CREATE TABLE IF NOT EXISTS " + mutexesTableName + " (";
         Field idField = entityClass.getDeclaredField(entityIDField);
         String idFieldType = idField.getType().getName();
@@ -71,18 +70,21 @@ public class MySQLMutexes<ID> implements Mutexes<ID> {
      */
     @Override
     public int lock(ID id, String processName) {
+        if (mock) {
+            return 1;
+        }
         initIfNecessary();
         long currTime = clock.now();
         long unlockTime = currTime - maxLockTime;
         //通过UPDATE来获得锁
-        String sql = "UPDATE mutexes_" + entityClass.getSimpleName() + " SET locked = ?, lockProcess = ?, lockTime = ? " +
+        String sql = "UPDATE " + mutexesTableName + " SET locked = ?, lockProcess = ?, lockTime = ? " +
                 "WHERE id = ? AND (locked = ? OR lockTime < ?)";
         int result = jdbcTemplate.update(sql, 1, processName, currTime, id, 0, unlockTime);
         if (result == 1) {
             return 1;
         }
         //判断锁是否存在
-        sql = "SELECT * FROM mutexes_" + entityClass.getSimpleName() + " WHERE id = ?";
+        sql = "SELECT * FROM " + mutexesTableName + " WHERE id = ?";
         try {
             Mutex mutex = jdbcTemplate.queryForObject(sql, new BeanPropertyRowMapper<>(Mutex.class), id);
             if (mutex == null) {
@@ -99,8 +101,11 @@ public class MySQLMutexes<ID> implements Mutexes<ID> {
      */
     @Override
     public boolean newAndLock(ID id, String processName) {
+        if (mock) {
+            return true;
+        }
         initIfNecessary();
-        String sql = "INSERT INTO mutexes_" + entityClass.getSimpleName() + " (id, locked, lockProcess, lockTime) VALUES (?, ?, ?, ?)";
+        String sql = "INSERT INTO " + mutexesTableName + " (id, locked, lockProcess, lockTime) VALUES (?, ?, ?, ?)";
         try {
             jdbcTemplate.update(sql, id, 1, processName, clock.now());
         } catch (DataAccessException e) {
@@ -111,8 +116,11 @@ public class MySQLMutexes<ID> implements Mutexes<ID> {
 
     @Override
     public void unlockAll(Set<Object> ids) {
+        if (mock) {
+            return;
+        }
         initIfNecessary();
-        String sql = "UPDATE mutexes_" + entityClass.getSimpleName() + " SET locked = ? WHERE id = ?";
+        String sql = "UPDATE " + mutexesTableName + " SET locked = ? WHERE id = ?";
         List<Object[]> updateParameters = new ArrayList<>();
         for (Object id : ids) {
             updateParameters.add(new Object[]{0, id});
@@ -122,15 +130,21 @@ public class MySQLMutexes<ID> implements Mutexes<ID> {
 
     @Override
     public String getLockProcess(ID id) {
+        if (mock) {
+            return null;
+        }
         initIfNecessary();
-        String sql = "SELECT lockProcess FROM mutexes_" + entityClass.getSimpleName() + " WHERE id = ?";
+        String sql = "SELECT lockProcess FROM " + mutexesTableName + " WHERE id = ?";
         return jdbcTemplate.queryForObject(sql, String.class, id);
     }
 
     @Override
     public void removeAll(Set<Object> ids) {
+        if (mock) {
+            return;
+        }
         initIfNecessary();
-        String sql = "DELETE FROM mutexes_" + entityClass.getSimpleName() + " WHERE id = ?";
+        String sql = "DELETE FROM " + mutexesTableName + " WHERE id = ?";
         List<Object[]> removeParameters = new ArrayList<>();
         for (Object id : ids) {
             removeParameters.add(new Object[]{id});
